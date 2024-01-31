@@ -71,7 +71,23 @@ async def search(password=Header(...), search_query: str = Body(...)):
             raise HTTPException(status_code=r.status_code, detail="Error de api")
     else:
         raise HTTPException(status_code=404, detail="Token invalido o expirado")
-
+    
+    
+@app.post("/show", status_code=200)
+async def show(password=Header(...), show_id: int = Body(...)):
+    
+    if fnt.decrypt(bytes(config('pass'), encoding='utf-8')) == bytes(password, encoding='utf-8'):
+        url=f'https://api.tvmaze.com/shows/{show_id}'
+        r = await get(url)
+        
+        if r.status_code==200:
+            response=json.loads(r.text)
+            return response
+        
+        else:
+            raise HTTPException(status_code=r.status_code, detail="Error de api")
+    else:
+        raise HTTPException(status_code=404, detail="Token invalido o expirado")
 
 #___________________________________ ENTRY POINT ___________________________________
 if __name__=='__main__':
