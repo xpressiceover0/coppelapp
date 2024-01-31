@@ -39,6 +39,9 @@ app.add_middleware(CORSMiddleware,
 async def get(url):
     return rq.get(url)
 
+# _______________________________ LLAVE DE ACCESO DE APP _______________________________
+key=config('key')
+fnt=Fernet(bytes(key, encoding='utf-8'))
 
 #___________________________________ ENDPOINTS ___________________________________
 
@@ -72,6 +75,4 @@ async def search(password=Header(...), search_query: str = Body(...)):
 
 #___________________________________ ENTRY POINT ___________________________________
 if __name__=='__main__':
-    key=config('key')
-    fnt=Fernet(bytes(key, encoding='utf-8'))
     uvicorn.run(app, host='0.0.0.0', port=config('PORT', cast=int))
