@@ -89,6 +89,7 @@ async def show(password=Header(...), show_id: int = Body(...)):
     else:
         raise HTTPException(status_code=404, detail="Token invalido o expirado")
 
+
 #___________________________________ ENTRY POINT ___________________________________
 if __name__=='__main__':
     uvicorn.run(app, host='0.0.0.0', port=config('PORT', cast=int))
