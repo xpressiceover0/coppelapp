@@ -79,7 +79,7 @@ async def show(password=Header(...), show_id: int = Body(...)):
         table=db['show_cache']
         query = { "_id": show_id }
 
-        cursor = await table.find_one(query)
+        cursor = table.find_one(query)
         
         if cursor:
             return cursor
@@ -95,6 +95,7 @@ async def show(password=Header(...), show_id: int = Body(...)):
                     db_response=table.insert_one(response)
                     if not db_response.acknowledged:
                         print('ERROR DB acknowledged false /show')
+                        # no se levanta excepcion porque no es indispensable insertar en cache mientras la API funcione
 
                 except:
                     print('ERROR DB insert API response onject /show ')
@@ -113,25 +114,22 @@ async def show(password=Header(...), show_id: int = Body(...), comment: str = Bo
     if fnt.decrypt(bytes(config('pass'), encoding='utf-8')) == bytes(password, encoding='utf-8'):
         
         table=db['comments_rating']
-        query = { "_id": show_id}
-        
-        check=0
 
-        if rating >= 0 and rating <= 5:
-            query["rating"]=rating
-            check+=1
+        opinion = {"comment": comment, "rating": rating}
+        cursor = table.find_one({"_id": show_id})
         
-        if comment:
-            query["comment"]= comment
-            check+=1
+        try:
+            if cursor is None:
+                table.insert_one({"_id": show_id, "opinion": [opinion]})
 
-        db_response=table.insert_one(query)
-        
-        
-        if not db_response.acknowledged:
-            print('ERROR DB acknowledged false /comments')
+            else:
+                table.update_one({"_id": show_id}, {"$push": {"opinion": opinion}})
+            
+            return {'detail': 'ok'}
 
-        
+        except Exception as e:
+            print('ERROR DB insert API response onject /show ', e)
+            raise HTTPException(status_code=503, detail="DB ERROR conexion no disponible")
     else:
         raise HTTPException(status_code=404, detail="Token invalido o expirado")
 
