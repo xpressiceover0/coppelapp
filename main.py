@@ -79,7 +79,7 @@ async def show(password=Header(...), show_id: int = Body(...)):
         table=db['show_cache']
         query = { "_id": show_id }
 
-        cursor = table.find_one(query)
+        cursor = await table.find_one(query)
         
         if cursor:
             return cursor
@@ -106,6 +106,34 @@ async def show(password=Header(...), show_id: int = Body(...)):
     else:
         raise HTTPException(status_code=404, detail="Token invalido o expirado")
 
+
+@app.post("/comments", status_code=201)
+async def show(password=Header(...), show_id: int = Body(...), comment: str = Body(...), rating: int = Body(...)):
+    
+    if fnt.decrypt(bytes(config('pass'), encoding='utf-8')) == bytes(password, encoding='utf-8'):
+        
+        table=db['comments_rating']
+        query = { "_id": show_id}
+        
+        check=0
+
+        if rating >= 0 and rating <= 5:
+            query["rating"]=rating
+            check+=1
+        
+        if comment:
+            query["comment"]= comment
+            check+=1
+
+        db_response=table.insert_one(query)
+        
+        
+        if not db_response.acknowledged:
+            print('ERROR DB acknowledged false /comments')
+
+        
+    else:
+        raise HTTPException(status_code=404, detail="Token invalido o expirado")
 
 #___________________________________ ENTRY POINT ___________________________________
 if __name__=='__main__':
