@@ -53,15 +53,31 @@ async def search(password=Header(...), search_query: str = Body(...)):
         if r.status_code==200:
             contents=json.loads(r.text)
             
-            response=[
-                {
-                'id': content['show']['id'], 
-                'name': content['show']['name'],
-                'channel': content['show']['webChannel'] or content['show']['network']['name'],
-                'summary': content['show']['summary'],
-                'genres': content['show']['genres']}
+            table=db['comments_rating']
 
-                for content in contents if content['show']]
+            ids={}
+            response=[]
+            idx_resp=0
+
+            for programa in contents:
+                if programa['show']:
+                    ids[programa['show']['id']] = idx_resp
+                    idx_resp+=1
+                    
+                    response.append(
+                        {
+                            'id': programa['show']['id'], 
+                            'name': programa['show']['name'],
+                            'channel': programa['show']['webChannel'] or programa['show']['network']['name'],
+                            'summary': programa['show']['summary'],
+                            'genres': programa['show']['genres']
+                        })
+            
+            cursor=list(table.find({'_id': {'$in': list(ids.keys())}}))
+            
+            for opinion in cursor:
+                if opinion['_id'] in ids:
+                    response[ids[opinion['_id']]]['comments'] = opinion['opinion']
             
             return response
         
