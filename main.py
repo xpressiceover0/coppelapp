@@ -10,20 +10,18 @@ from typing import List
 
 
 #Database
-from db import config
+from db.config import client
 
 # misc
 import requests as rq
 import json
-import time
-import datetime
-import os
-import subprocess
-import re
-import uuid
+import sys
 from decouple import config #import dotenv -> en caso de manejar strings como variables de entorno
 from cryptography.fernet import Fernet
 
+
+# _______________________________ CONEXION DB _______________________________
+db=client[config('schema')]
 
 # _______________________________ INSTANCIA DE APP _______________________________
 # La clase fastApi inicia los endpionts de la api
@@ -72,20 +70,39 @@ async def search(password=Header(...), search_query: str = Body(...)):
     else:
         raise HTTPException(status_code=404, detail="Token invalido o expirado")
     
-    
+
 @app.post("/show", status_code=200)
 async def show(password=Header(...), show_id: int = Body(...)):
     
     if fnt.decrypt(bytes(config('pass'), encoding='utf-8')) == bytes(password, encoding='utf-8'):
-        url=f'https://api.tvmaze.com/shows/{show_id}'
-        r = await get(url)
         
-        if r.status_code==200:
-            response=json.loads(r.text)
-            return response
+        table=db['show_cache']
+        query = { "_id": show_id }
+
+        cursor = table.find_one(query)
+        
+        if cursor:
+            return cursor
         
         else:
-            raise HTTPException(status_code=r.status_code, detail="Error de api")
+            url=f'https://api.tvmaze.com/shows/{show_id}'
+            r = await get(url)
+            
+            if r.status_code==200:
+                response=json.loads(r.text)
+                response['_id']=response.pop('id')
+                try:
+                    db_response=table.insert_one(response)
+                    if not db_response.acknowledged:
+                        print('ERROR DB acknowledged false /show')
+
+                except:
+                    print('ERROR DB insert API response onject /show ')
+                
+                return response
+            
+            else:
+                raise HTTPException(status_code=r.status_code, detail="Error de api")
     else:
         raise HTTPException(status_code=404, detail="Token invalido o expirado")
 
@@ -93,3 +110,5 @@ async def show(password=Header(...), show_id: int = Body(...)):
 #___________________________________ ENTRY POINT ___________________________________
 if __name__=='__main__':
     uvicorn.run(app, host='0.0.0.0', port=config('PORT', cast=int))
+    client.close()
+    sys.exit(0)
