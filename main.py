@@ -63,7 +63,7 @@ async def search(password=Header(...), search_query: str = Body(...)):
                 if programa['show']:
                     ids[programa['show']['id']] = idx_resp
                     idx_resp+=1
-                    
+
                     response.append(
                         {
                             'id': programa['show']['id'], 
@@ -73,7 +73,7 @@ async def search(password=Header(...), search_query: str = Body(...)):
                             'genres': programa['show']['genres']
                         })
             
-            cursor=list(table.find({'_id': {'$in': list(ids.keys())}}))
+            cursor=table.find({'_id': {'$in': list(ids.keys())}})
             
             for opinion in cursor:
                 if opinion['_id'] in ids:
@@ -92,13 +92,13 @@ async def show(password=Header(...), show_id: int = Body(...)):
     
     if fnt.decrypt(bytes(config('pass'), encoding='utf-8')) == bytes(password, encoding='utf-8'):
         
-        table=db['show_cache']
-        query = { "_id": show_id }
+        table_cache=db['show_cache']
+        table_comments=db['comments_rating']
 
-        cursor = table.find_one(query)
-        
+        cursor = table_cache.find_one({ "_id": show_id })
+
         if cursor:
-            return cursor
+            response=cursor
         
         else:
             url=f'https://api.tvmaze.com/shows/{show_id}'
@@ -108,7 +108,7 @@ async def show(password=Header(...), show_id: int = Body(...)):
                 response=json.loads(r.text)
                 response['_id']=response.pop('id')
                 try:
-                    db_response=table.insert_one(response)
+                    db_response=table_cache.insert_one(response)
                     if not db_response.acknowledged:
                         print('ERROR DB acknowledged false /show')
                         # no se levanta excepcion porque no es indispensable insertar en cache mientras la API funcione
@@ -116,10 +116,15 @@ async def show(password=Header(...), show_id: int = Body(...)):
                 except:
                     print('ERROR DB insert API response onject /show ')
                 
-                return response
-            
             else:
                 raise HTTPException(status_code=r.status_code, detail="Error de api")
+        
+        cursor=table_comments.find_one({'_id': show_id})
+        if cursor:
+            response['comments'] = cursor['opinion']
+        
+        return response
+    
     else:
         raise HTTPException(status_code=404, detail="Token invalido o expirado")
 
