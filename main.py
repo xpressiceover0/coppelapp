@@ -16,6 +16,7 @@ from db.config import client
 import requests as rq
 import json
 import sys
+import time
 from decouple import config #import dotenv -> en caso de manejar strings como variables de entorno
 from cryptography.fernet import Fernet
 
@@ -161,6 +162,8 @@ async def show(password=Header(...), show_id: int = Body(...), comment: str = Bo
 @app.post("/avg_rating", status_code=201)
 async def avg_rating(password=Header(...), show_id: int = Body(...)):
     
+    t0=time.time()
+    
     if fnt.decrypt(bytes(config('pass'), encoding='utf-8')) == bytes(password, encoding='utf-8'):
         
         table_cache=db['show_cache']
@@ -196,6 +199,9 @@ async def avg_rating(password=Header(...), show_id: int = Body(...)):
 
         response={'avg_rating': avg_rating, 'local_rating': local_rating}
         
+        t1=time.time()
+        if t1-t0 < 4:
+            time.sleep(4-(t1-t0))
         return response
     
     else:
