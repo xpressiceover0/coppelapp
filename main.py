@@ -97,6 +97,7 @@ async def show(password=Header(...), show_id: int = Body(...)):
 
         cursor = table_cache.find_one({ "_id": show_id })
 
+        response=dict()
         if cursor:
             response=cursor
         
@@ -151,6 +152,52 @@ async def show(password=Header(...), show_id: int = Body(...), comment: str = Bo
         except Exception as e:
             print('ERROR DB insert API response onject /show ', e)
             raise HTTPException(status_code=503, detail="DB ERROR conexion no disponible")
+    else:
+        raise HTTPException(status_code=404, detail="Token invalido o expirado")
+
+
+
+
+@app.post("/avg_rating", status_code=201)
+async def avg_rating(password=Header(...), show_id: int = Body(...)):
+    
+    if fnt.decrypt(bytes(config('pass'), encoding='utf-8')) == bytes(password, encoding='utf-8'):
+        
+        table_cache=db['show_cache']
+        table_comments=db['comments_rating']
+
+        cursor = table_cache.find_one({ "_id": show_id })
+
+        response=dict()
+        if cursor:
+            response=cursor
+        
+        else:
+            url=f'https://api.tvmaze.com/shows/{show_id}'
+            r = await get(url)
+            
+            if r.status_code==200:
+                response=json.loads(r.text)
+                response['_id']=response.pop('id')
+
+            else:
+                raise HTTPException(status_code=r.status_code, detail="Error de api")
+        
+        cursor=table_comments.find_one({'_id': show_id})
+        if cursor:
+            local_ratings = [opinion['rating'] for opinion in cursor['opinion']]
+            local_rating=sum(local_ratings)/len(local_ratings)
+        else:
+            local_rating=0
+        
+        avg_rating=response['rating']['average']
+        if not avg_rating:
+            avg_rating=0
+
+        response={'avg_rating': avg_rating, 'local_rating': local_rating}
+        
+        return response
+    
     else:
         raise HTTPException(status_code=404, detail="Token invalido o expirado")
 
