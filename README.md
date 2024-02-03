@@ -14,7 +14,7 @@ la cual es recomendable guardar en un archivo aparte o en una memoria extraible.
 
 - PORT = 8000
 - key = secret_key *(llave generada por Fernet)*
-- pass = password_de_endpoints *(encriptado con la llave key)* *se debe mandar el password en el header al hacer una petición*
+- pass = password_de_endpoints *(encriptado con la llave key)* *se debe mandar el password en el header al hacer una petición* el password es **mypassword** y se debe mandar en el header de cada petición
 - schema = database_schema
 - dbuser = usuario de acceso a DB mongo *(encriptado con la llave key)*
 
