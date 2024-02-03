@@ -1,6 +1,8 @@
 ## Proyecto COPPELAPP de Búsqueda y Valoración de Programas
 - Este proyecto utiliza FastAPI para crear una API que permite la búsqueda de programas de televisión a través de la API de TVmaze, así como la obtención de detalles y la valoración de estos programas. También proporciona funcionalidades para publicar y obtener comentarios relacionados con los programas.
 
+Mediante la ruta localhost:8000/docs se puede acceder a la interface swagger para probar cada endpoint.
+
 # Requisitos
  tener instaladas las bibliotecas especificadas en el archivo *requirements.txt* antes de ejecutar la aplicación mediante el gestor de paquetes *pip*:
 
