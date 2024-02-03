@@ -35,14 +35,22 @@ app.add_middleware(CORSMiddleware,
     allow_methods=['*'],
     allow_headers=['*'])
 
+# funciones asincronas para que evitar cuello de botella en las peticiones
 async def get(url):
     return rq.get(url)
+
+async def sleep(secs):
+    time.sleep(secs)
 
 # _______________________________ LLAVE DE ACCESO DE APP _______________________________
 key=config('key')
 fnt=Fernet(bytes(key, encoding='utf-8'))
 
 #___________________________________ ENDPOINTS ___________________________________
+
+# busqueda de una pelicula mediante una palabra clave a través de la api tvmaze
+# recibe string de busqueda
+# regresa json con busquedas relacionadas
 
 @app.post("/search", status_code=200)
 async def search(password=Header(...), search_query: str = Body(...)):
@@ -88,6 +96,10 @@ async def search(password=Header(...), search_query: str = Body(...)):
         raise HTTPException(status_code=404, detail="Token invalido o expirado")
     
 
+# busqueda de una pelicula mediante su id
+# recibe int ID de la pelicula en la API
+# regresa json con datos de la pelicula
+
 @app.post("/show", status_code=200)
 async def show(password=Header(...), show_id: int = Body(...)):
     
@@ -130,6 +142,9 @@ async def show(password=Header(...), show_id: int = Body(...)):
     else:
         raise HTTPException(status_code=404, detail="Token invalido o expirado")
 
+# Publicar comentarios relacionados a una pelicula
+# recibe el int ID de la pelicula, comentario y valoracion
+# regresa status status code http
 
 @app.post("/comments", status_code=201)
 async def show(password=Header(...), show_id: int = Body(...), comment: str = Body(...), rating: int = Body(...)):
@@ -156,8 +171,9 @@ async def show(password=Header(...), show_id: int = Body(...), comment: str = Bo
     else:
         raise HTTPException(status_code=404, detail="Token invalido o expirado")
 
-
-
+# obtiene la valoracion promedio de una pelicula que ya este en la DB o desde la API
+# recibe int ID de pelicula
+# regresa json con la valoracion de la api y la valoracion que ha recibido mediante este sistema
 
 @app.post("/avg_rating", status_code=201)
 async def avg_rating(password=Header(...), show_id: int = Body(...)):
@@ -199,9 +215,11 @@ async def avg_rating(password=Header(...), show_id: int = Body(...)):
 
         response={'avg_rating': avg_rating, 'local_rating': local_rating}
         
+        # espera 4 segundos para devolver la respuesta desde que se realizó la petición, si tarda mas de 4 seg ya no espera
         t1=time.time()
         if t1-t0 < 4:
-            time.sleep(4-(t1-t0))
+            await sleep(4-(t1-t0))
+        
         return response
     
     else:
