@@ -7,7 +7,7 @@
 - pip install -r requirements.txt
 
 # Configuración
-- Crea un archivo .env en el directorio raíz del proyecto y configura las variables de entorno necesarias:
+copiar los archivos en una carpeta y modificar el archivo .env para configurar las variables de entorno necesarias:
 
 La variable **key** es una llave generada mediante el módulo de python cryptography.fernet.Fernet mediante el método **generate_key()**
 la cual es recomendable guardar en un archivo aparte o en una memoria extraible. Todos los usuarios y passwords deben estar encriptados usando el mismo módulo con el método **encrypt**
